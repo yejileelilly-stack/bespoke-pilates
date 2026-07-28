@@ -381,8 +381,23 @@ const PAYNOW_NAME = 'Yeji';
       <div class="si" id="si2m"><div class="si-dot">2</div><div class="si-lbl">Confirm</div></div>
     </div>
 
+    <!-- sc0: New client or Member -->
+    <div class="fsc active" id="sc0">
+      <p style="font-size:13px;color:var(--soft);margin-bottom:28px;">How would you like to book?</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div onclick="chooseNew()" style="border:1.5px solid var(--border);padding:36px 24px;cursor:pointer;text-align:center;transition:all .2s;background:var(--warm);" onmouseover="this.style.borderColor='var(--ink)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);margin-bottom:8px;">New Client</div>
+          <div style="font-size:12px;color:var(--muted);">Trial or single session</div>
+        </div>
+        <div onclick="chooseMember()" style="border:1.5px solid var(--border);padding:36px 24px;cursor:pointer;text-align:center;transition:all .2s;background:var(--warm);" onmouseover="this.style.borderColor='var(--ink)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);margin-bottom:8px;">Member</div>
+          <div style="font-size:12px;color:var(--muted);">10-session pack holder</div>
+        </div>
+      </div>
+    </div>
+
     <!-- sc1: Session select -->
-    <div class="fsc active" id="sc1">
+    <div class="fsc" id="sc1">
       <p id="sc1-hint" style="font-size:11px;color:var(--muted);margin-bottom:18px;">Choose your session type</p>
       <div class="pick-grid" id="pick-grid-new">
         <div class="pick-card sel" onclick="pickSess(this,'Trial Session','$70')"><span class="pc-name">Trial Session</span><span class="pc-price">$70</span><span class="pc-detail">First time · 50 min</span></div>
@@ -744,7 +759,8 @@ function openBookingModal() {
   document.body.style.overflow = 'hidden';
   if (!isMemberFlow) {
     setNewClientMode();
-    goTo(1);
+    document.querySelectorAll('.fsc').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sc0').classList.add('active');
   }
 }
 function closeBookingModal() {
@@ -798,12 +814,9 @@ async function loadUserProfile(profile) {
   document.getElementById('nav-guest').style.display = 'none';
   document.getElementById('nav-member').style.display = 'flex';
   document.getElementById('dash-name').textContent = data.name || 'Member';
-  const { data: sessData } = await sb.from('sessions').select('*').eq('profile_id', data.id);
-  const used = sessData?.length || 0;
-  const total = data.sessions_total || 0;
-  const remaining = Math.max(0, total - used);
+  const remaining = data.sessions_remaining || 0;
   document.getElementById('dash-sessions').textContent = remaining;
-  document.getElementById('dash-sessions-detail').textContent = `${used} of ${total} sessions used`;
+  document.getElementById('dash-sessions-detail').textContent = remaining + ' sessions remaining';
   await loadDashboardBookings();
   if (typeof memberInitCal === 'function') memberInitCal();
 }
@@ -852,6 +865,16 @@ function logout() {
   document.getElementById('nav-guest').style.display='flex';
   document.getElementById('nav-member').style.display='none';
   showToast('Signed out.');
+}
+
+function chooseNew() {
+  setNewClientMode();
+  goTo(1);
+}
+function chooseMember() {
+  closeBookingModal();
+  if(currentUser) { showDashboard(); }
+  else { openLogin(); }
 }
 
 function setBookingMode(isMember) {
